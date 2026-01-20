@@ -12,6 +12,16 @@
   align-items: center;
 }
 
+.dashboard-logo {
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-logo img {
+  max-width: 100px;
+  height: auto;
+}
+
 .dashboard-header h1 {
   color: #333;
   font-size: 1.8rem;
@@ -418,6 +428,10 @@
     flex-direction: column;
     gap: 15px;
     padding: 20px;
+  }
+
+  .dashboard-logo img {
+    max-width: 70px;
   }
 
   .dashboard-tabs {

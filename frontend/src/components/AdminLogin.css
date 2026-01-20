@@ -4,6 +4,19 @@
   justify-content: center;
   align-items: center;
   padding: 20px;
+  position: relative;
+}
+
+.admin-login-logo {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+}
+
+.admin-login-logo img {
+  max-width: 120px;
+  height: auto;
 }
 
 .admin-login-card {
@@ -113,6 +126,15 @@
 }
 
 @media (max-width: 768px) {
+  .admin-login-logo {
+    top: 15px;
+    left: 15px;
+  }
+
+  .admin-login-logo img {
+    max-width: 80px;
+  }
+
   .admin-login-card {
     padding: 30px 20px;
   }
