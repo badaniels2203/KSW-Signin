@@ -108,8 +108,11 @@ docker-compose up -d
 ```
 
 5. Wait for services to initialize (about 30 seconds), then access:
-- **Student Sign-In**: http://localhost
-- **Admin Portal**: http://localhost/admin/login
+- **Student Sign-In**: http://localhost:8080
+- **Admin Portal**: http://localhost:8080/admin/login
+
+**Note on Port 80 Conflicts:**
+The application uses port 8080 by default to avoid conflicts with Apache, native nginx, or other services that commonly use port 80. If port 80 is available on your system, you can change the port in `docker-compose.yml` from `8080:80` to `80:80`. See `PORT_CONFLICT_TROUBLESHOOTING.md` for more details.
 
 ### Default Admin Credentials
 - Username: `admin`
@@ -273,8 +276,8 @@ REACT_APP_API_URL=http://<your-server-ip>:3001/api
 ```
 
 3. Access from any device on the network:
-- Student Sign-In: `http://<your-server-ip>`
-- Admin Portal: `http://<your-server-ip>/admin/login`
+- Student Sign-In: `http://<your-server-ip>:8080`
+- Admin Portal: `http://<your-server-ip>:8080/admin/login`
 
 ### Cloud Deployment
 
