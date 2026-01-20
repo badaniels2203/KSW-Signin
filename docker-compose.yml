@@ -44,7 +44,7 @@ services:
     build: ./frontend
     container_name: ksw-frontend
     ports:
-      - "80:8080"
+      - "8080:80"
     depends_on:
       - backend
     restart: unless-stopped
