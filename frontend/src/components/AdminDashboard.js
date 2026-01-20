@@ -376,6 +376,9 @@ function AdminDashboard() {
   return (
     <div className="admin-dashboard">
       <header className="dashboard-header">
+        <div className="dashboard-logo">
+          <img src="/logo.png" alt="KSW Logo" />
+        </div>
         <h1>KSW Admin Portal</h1>
         <div className="header-actions">
           <button className="btn-back" onClick={() => navigate('/')}>

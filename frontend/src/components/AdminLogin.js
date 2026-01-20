@@ -33,6 +33,9 @@ function AdminLogin() {
 
   return (
     <div className="admin-login-container">
+      <div className="admin-login-logo">
+        <img src="/logo.png" alt="KSW Logo" />
+      </div>
       <div className="admin-login-card">
         <h1 className="admin-login-title">Admin Portal</h1>
         <h2 className="admin-login-subtitle">Sign in to continue</h2>

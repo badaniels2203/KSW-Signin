@@ -80,6 +80,9 @@ function SignIn() {
   return (
     <div className="signin-container">
       <div className="signin-card">
+        <div className="logo-container">
+          <img src="/logo.png" alt="KSW Logo" className="signin-logo" />
+        </div>
         <h1 className="signin-title">KSW Martial Arts</h1>
         <h2 className="signin-subtitle">Student Sign-In</h2>
 
