@@ -150,8 +150,8 @@ router.get('/stats', authenticateToken, async (req, res) => {
 
     if (month && year) {
       params.push(year, month);
-      dateFilter = `WHERE EXTRACT(YEAR FROM a.attendance_date) = $1
-                    AND EXTRACT(MONTH FROM a.attendance_date) = $2`;
+      dateFilter = `WHERE EXTRACT(YEAR FROM attendance_date) = $1
+                    AND EXTRACT(MONTH FROM attendance_date) = $2`;
     }
 
     const result = await pool.query(`
