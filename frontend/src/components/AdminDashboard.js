@@ -379,7 +379,7 @@ function AdminDashboard() {
         <div className="dashboard-logo">
           <img src="/logo.png" alt="KSW Logo" />
         </div>
-        <h1>KSW Admin Portal</h1>
+        <h1>Fakenham and Dereham KSW Admin Portal</h1>
         <div className="header-actions">
           <button className="btn-back" onClick={() => navigate('/')}>
             ← Student Sign-In
