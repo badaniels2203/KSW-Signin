@@ -16,7 +16,7 @@ router.get('/search', async (req, res) => {
     const result = await pool.query(
       `SELECT id, name, class_category
        FROM students
-       WHERE active = true AND name ILIKE $1
+       WHERE active = true AND (name ILIKE $1 OR registration_number ILIKE $1)
        ORDER BY name
        LIMIT 20`,
       [`%${query}%`]
@@ -47,7 +47,7 @@ router.get('/', authenticateToken, async (req, res) => {
       query += ` AND active = $${params.length}`;
     }
 
-    query += ' ORDER BY name';
+    query += ' ORDER BY class_category, name';
 
     const result = await pool.query(query, params);
     res.json(result.rows);
@@ -78,7 +78,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // Create student (admin only)
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { name, class_category } = req.body;
+    const { name, class_category, registration_number, monthly_lessons } = req.body;
 
     if (!name || !class_category) {
       return res.status(400).json({ error: 'Name and class category required' });
@@ -89,16 +89,30 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Invalid class category' });
     }
 
+    // Check if registration_number already exists
+    if (registration_number) {
+      const existing = await pool.query(
+        'SELECT * FROM students WHERE registration_number = $1',
+        [registration_number]
+      );
+      if (existing.rows.length > 0) {
+        return res.status(400).json({ error: 'Registration number already exists' });
+      }
+    }
+
     const result = await pool.query(
-      `INSERT INTO students (name, class_category)
-       VALUES ($1, $2)
+      `INSERT INTO students (name, class_category, registration_number, monthly_lessons)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [name, class_category]
+      [name, class_category, registration_number || null, monthly_lessons || 8]
     );
 
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Create student error:', error);
+    if (error.code === '23505') {
+      return res.status(400).json({ error: 'Registration number already exists' });
+    }
     res.status(500).json({ error: 'Server error creating student' });
   }
 });
@@ -107,7 +121,7 @@ router.post('/', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, class_category, active } = req.body;
+    const { name, class_category, registration_number, monthly_lessons, active } = req.body;
 
     if (!name || !class_category) {
       return res.status(400).json({ error: 'Name and class category required' });
@@ -118,12 +132,31 @@ router.put('/:id', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Invalid class category' });
     }
 
+    // Check if registration_number already exists for a different student
+    if (registration_number) {
+      const existing = await pool.query(
+        'SELECT * FROM students WHERE registration_number = $1 AND id != $2',
+        [registration_number, id]
+      );
+      if (existing.rows.length > 0) {
+        return res.status(400).json({ error: 'Registration number already exists' });
+      }
+    }
+
     const result = await pool.query(
       `UPDATE students
-       SET name = $1, class_category = $2, active = $3, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $4
+       SET name = $1, class_category = $2, registration_number = $3, 
+           monthly_lessons = $4, active = $5, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $6
        RETURNING *`,
-      [name, class_category, active !== undefined ? active : true, id]
+      [
+        name, 
+        class_category, 
+        registration_number || null, 
+        monthly_lessons || 8, 
+        active !== undefined ? active : true, 
+        id
+      ]
     );
 
     if (result.rows.length === 0) {
@@ -133,6 +166,9 @@ router.put('/:id', authenticateToken, async (req, res) => {
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Update student error:', error);
+    if (error.code === '23505') {
+      return res.status(400).json({ error: 'Registration number already exists' });
+    }
     res.status(500).json({ error: 'Server error updating student' });
   }
 });

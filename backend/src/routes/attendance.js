@@ -105,6 +105,8 @@ router.get('/report/by-student', authenticateToken, async (req, res) => {
 
     let query = `
       SELECT
+        s.registration_number,
+        s.monthly_lessons,
         s.id,
         s.name,
         s.class_category,
@@ -128,8 +130,8 @@ router.get('/report/by-student', authenticateToken, async (req, res) => {
     }
 
     query += `
-      GROUP BY s.id, s.name, s.class_category
-      ORDER BY s.class_category, total_classes DESC, s.name
+      GROUP BY s.id, s.name, s.registration_number, s.monthly_lessons, s.class_category
+      ORDER BY s.class_category, s.name
     `;
 
     const result = await pool.query(query, params);
@@ -156,6 +158,8 @@ router.get('/stats', authenticateToken, async (req, res) => {
 
     const result = await pool.query(`
       SELECT
+        s.registration_number,
+        s.monthly_lessons,
         s.class_category,
         COUNT(DISTINCT s.id) as total_students,
         COUNT(a.id) as total_attendances,
@@ -199,3 +203,40 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 });
 
 module.exports = router;
+
+// Get over-attendance report (students exceeding monthly lesson allocation)
+router.get('/report/over-attendance', authenticateToken, async (req, res) => {
+  try {
+    const { month, year } = req.query;
+
+    if (!month || !year) {
+      return res.status(400).json({ error: 'Month and year are required' });
+    }
+
+    const result = await pool.query(`
+      SELECT
+        s.registration_number,
+        s.monthly_lessons,
+        s.id,
+        s.name,
+        s.registration_number,
+        s.class_category,
+        s.monthly_lessons,
+        COUNT(a.id) as total_attended,
+        (COUNT(a.id) - s.monthly_lessons) as over_by
+      FROM students s
+      LEFT JOIN attendance a ON s.id = a.student_id
+        AND EXTRACT(YEAR FROM a.attendance_date) = $1
+        AND EXTRACT(MONTH FROM a.attendance_date) = $2
+      WHERE s.active = true
+      GROUP BY s.id, s.name, s.registration_number, s.class_category, s.monthly_lessons
+      HAVING COUNT(a.id) > s.monthly_lessons
+      ORDER BY s.class_category, over_by DESC, s.name
+    `, [year, month]);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get over-attendance report error:', error);
+    res.status(500).json({ error: 'Server error generating over-attendance report' });
+  }
+});
