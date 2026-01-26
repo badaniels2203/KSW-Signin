@@ -13,6 +13,7 @@ const initializeDatabase = async () => {
       CREATE TABLE IF NOT EXISTS students (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
+        date_of_birth DATE,
         registration_number VARCHAR(100) UNIQUE,
         class_category VARCHAR(50) NOT NULL CHECK (class_category IN ('Little Lions', 'Juniors', 'Youths', 'Adults')),
         monthly_lessons INTEGER DEFAULT 8,
@@ -36,9 +37,14 @@ const initializeDatabase = async () => {
                        WHERE table_name='students' AND column_name='monthly_lessons') THEN
           ALTER TABLE students ADD COLUMN monthly_lessons INTEGER DEFAULT 8;
         END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                       WHERE table_name='students' AND column_name='date_of_birth') THEN
+          ALTER TABLE students ADD COLUMN date_of_birth DATE;
+        END IF;
       END $$;
     `);
-    console.log('Ensured registration_number and monthly_lessons columns exist');
+    console.log('Ensured registration_number, monthly_lessons, and date_of_birth columns exist');
 
     // Create index on name for faster searching
     await client.query(`
@@ -53,6 +59,11 @@ const initializeDatabase = async () => {
     // Create index on registration_number
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_students_registration_number ON students(registration_number);
+    `);
+
+    // Create index on date_of_birth for age range queries
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_students_dob ON students(date_of_birth);
     `);
 
     // Create attendance table
@@ -112,12 +123,12 @@ const initializeDatabase = async () => {
 
     // Add some sample students for testing
     const sampleStudents = [
-      { name: 'John Smith', category: 'Adults', regNum: 'REG001', lessons: 8 },
-      { name: 'Sarah Johnson', category: 'Youths', regNum: 'REG002', lessons: 12 },
-      { name: 'Michael Chen', category: 'Juniors', regNum: 'REG003', lessons: 8 },
-      { name: 'Emma Williams', category: 'Little Lions', regNum: 'REG004', lessons: 4 },
-      { name: 'David Brown', category: 'Adults', regNum: 'REG005', lessons: 8 },
-      { name: 'Olivia Davis', category: 'Juniors', regNum: 'REG006', lessons: 12 },
+      { name: 'John Smith', category: 'Adults', regNum: 'REG001', lessons: 8, dob: '1990-05-15' },
+      { name: 'Sarah Johnson', category: 'Youths', regNum: 'REG002', lessons: 12, dob: '2011-08-22' },
+      { name: 'Michael Chen', category: 'Juniors', regNum: 'REG003', lessons: 8, dob: '2014-03-10' },
+      { name: 'Emma Williams', category: 'Little Lions', regNum: 'REG004', lessons: 4, dob: '2018-11-30' },
+      { name: 'David Brown', category: 'Adults', regNum: 'REG005', lessons: 8, dob: '1985-02-28' },
+      { name: 'Olivia Davis', category: 'Juniors', regNum: 'REG006', lessons: 12, dob: '2013-07-14' },
     ];
 
     for (const student of sampleStudents) {
@@ -128,8 +139,8 @@ const initializeDatabase = async () => {
 
       if (existing.rows.length === 0) {
         await client.query(
-          'INSERT INTO students (name, class_category, registration_number, monthly_lessons) VALUES ($1, $2, $3, $4)',
-          [student.name, student.category, student.regNum, student.lessons]
+          'INSERT INTO students (name, class_category, registration_number, monthly_lessons, date_of_birth) VALUES ($1, $2, $3, $4, $5)',
+          [student.name, student.category, student.regNum, student.lessons, student.dob]
         );
       }
     }

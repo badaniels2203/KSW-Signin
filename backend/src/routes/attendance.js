@@ -236,3 +236,71 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 });
 
 module.exports = router;
+
+// Get age range transitions report (students changing age brackets)
+router.get('/report/age-transitions', authenticateToken, async (req, res) => {
+  try {
+    const { month, year } = req.query;
+
+    if (!month || !year) {
+      return res.status(400).json({ error: 'Month and year are required' });
+    }
+
+    // Get all active students with DOB
+    const students = await pool.query(`
+      SELECT id, name, registration_number, class_category, date_of_birth
+      FROM students
+      WHERE active = true AND date_of_birth IS NOT NULL
+      ORDER BY date_of_birth
+    `);
+
+    const transitions = [];
+    
+    students.rows.forEach(student => {
+      const dob = new Date(student.date_of_birth);
+      const targetDate = new Date(year, month - 1, 1); // Start of the target month
+      const endOfMonth = new Date(year, month, 0); // Last day of the target month
+      
+      // Calculate age at start and end of the target month
+      const ageAtStart = targetDate.getFullYear() - dob.getFullYear();
+      const ageAtEnd = endOfMonth.getFullYear() - dob.getFullYear();
+      
+      // Check if birthday is in this month
+      const birthdayThisMonth = dob.getMonth() + 1 === parseInt(month);
+      
+      if (birthdayThisMonth) {
+        // Determine testing age ranges
+        const getRange = (age) => {
+          if (age <= 8) return '8 and below';
+          if (age >= 9 && age <= 12) return '9-12 years';
+          if (age >= 13 && age <= 17) return '13-17 years';
+          return '18 and above';
+        };
+        
+        const rangeBeforeBirthday = getRange(ageAtStart);
+        const rangeAfterBirthday = getRange(ageAtEnd);
+        
+        // Check if they're transitioning to a new range (turning 9, 13, or 18)
+        const turningAge = ageAtEnd;
+        if (turningAge === 9 || turningAge === 13 || turningAge === 18) {
+          transitions.push({
+            id: student.id,
+            name: student.name,
+            registration_number: student.registration_number,
+            class_category: student.class_category,
+            date_of_birth: student.date_of_birth,
+            birthday_date: new Date(year, month - 1, dob.getDate()),
+            turning_age: turningAge,
+            current_age_range: rangeBeforeBirthday,
+            new_age_range: rangeAfterBirthday
+          });
+        }
+      }
+    });
+
+    res.json(transitions);
+  } catch (error) {
+    console.error('Get age transitions report error:', error);
+    res.status(500).json({ error: 'Server error generating age transitions report' });
+  }
+});
