@@ -10,6 +10,7 @@ import {
   getAttendance,
   getOverAttendanceReport,
   deleteAttendance,
+  getAgeTransitionsReport,
 } from '../api';
 import './AdminDashboard.css';
 
@@ -24,12 +25,14 @@ function AdminDashboard() {
     registration_number: '',
     class_category: 'Little Lions',
     monthly_lessons: 8,
+    date_of_birth: '',
     active: true,
   });
   const [reportData, setReportData] = useState([]);
   const [statsData, setStatsData] = useState([]);
   const [attendanceData, setAttendanceData] = useState([]);
   const [overAttendanceData, setOverAttendanceData] = useState([]);
+  const [ageTransitionsData, setAgeTransitionsData] = useState([]);
   const [reportMonth, setReportMonth] = useState('');
   const [reportYear, setReportYear] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -85,17 +88,19 @@ function AdminDashboard() {
         params.category = categoryFilter;
       }
 
-      const [reportResponse, statsResponse, attendanceResponse, overAttendanceResponse] = await Promise.all([
+      const [reportResponse, statsResponse, attendanceResponse, overAttendanceResponse, ageTransitionsResponse] = await Promise.all([
         getAttendanceReport(params),
         getAttendanceStats(params),
         getAttendance(params),
         getOverAttendanceReport({ month: reportMonth, year: reportYear }),
+        getAgeTransitionsReport({ month: reportMonth, year: reportYear }),
       ]);
 
       setReportData(reportResponse.data);
       setStatsData(statsResponse.data);
       setAttendanceData(attendanceResponse.data);
       setOverAttendanceData(overAttendanceResponse.data);
+      setAgeTransitionsData(ageTransitionsResponse.data);
     } catch (error) {
       console.error('Error loading report:', error);
     } finally {
@@ -117,6 +122,7 @@ function AdminDashboard() {
         registration_number: student.registration_number || '',
         class_category: student.class_category,
         monthly_lessons: student.monthly_lessons || 8,
+        date_of_birth: student.date_of_birth || '',
         active: student.active,
       });
     } else {
@@ -126,6 +132,7 @@ function AdminDashboard() {
         registration_number: '',
         class_category: 'Little Lions',
         monthly_lessons: 8,
+        date_of_birth: '',
         active: true,
       });
     }
@@ -140,6 +147,7 @@ function AdminDashboard() {
       registration_number: '',
       class_category: 'Little Lions',
       monthly_lessons: 8,
+      date_of_birth: '',
       active: true,
     });
   };
@@ -244,6 +252,11 @@ function AdminDashboard() {
                 <div className="student-lessons">
                   {student.monthly_lessons || 8} lessons/month
                 </div>
+                {student.testing_age_range && (
+                  <div className="student-age-range">
+                    Testing Age: {student.testing_age_range}
+                  </div>
+                )}
               </div>
               <div className="student-card-actions">
                 <button
@@ -374,6 +387,53 @@ function AdminDashboard() {
                           <td className="over-by-cell">
                             <span className="over-by-badge">+{record.over_by}</span>
                           </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+
+            {/* Age Range Transitions Section */}
+            {ageTransitionsData.length > 0 && (
+              <>
+                <h3 className="section-title warning-title">
+                  🎂 Testing Age Range Transitions ({ageTransitionsData.length})
+                </h3>
+                <div className="over-attendance-notice" style={{ background: '#d1ecf1', border: '2px solid #17a2b8', color: '#0c5460' }}>
+                  These students are changing testing age ranges this month.
+                </div>
+                <div className="report-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Reg #</th>
+                        <th>Category</th>
+                        <th>Birthday</th>
+                        <th>Turning Age</th>
+                        <th>Current Range</th>
+                        <th>New Range</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ageTransitionsData.map((record) => (
+                        <tr key={record.id} style={{ background: '#d1ecf1' }}>
+                          <td><strong>{record.name}</strong></td>
+                          <td>{record.registration_number || 'N/A'}</td>
+                          <td>
+                            <span
+                              className="category-badge-small"
+                              style={{ backgroundColor: getCategoryColor(record.class_category) }}
+                            >
+                              {record.class_category}
+                            </span>
+                          </td>
+                          <td>{new Date(record.birthday_date).toLocaleDateString()}</td>
+                          <td><strong>{record.turning_age}</strong></td>
+                          <td>{record.current_age_range}</td>
+                          <td><strong>{record.new_age_range}</strong></td>
                         </tr>
                       ))}
                     </tbody>
@@ -553,6 +613,17 @@ function AdminDashboard() {
                   required
                 />
                 <small>Number of classes per month this student is enrolled for</small>
+              </div>
+
+              <div className="form-group">
+                <label>Date of Birth</label>
+                <input
+                  type="date"
+                  value={formData.date_of_birth}
+                  onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                  placeholder="Optional"
+                />
+                <small>Used to calculate testing age range</small>
               </div>
 
               {editingStudent && (
