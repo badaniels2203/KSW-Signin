@@ -13,13 +13,32 @@ const initializeDatabase = async () => {
       CREATE TABLE IF NOT EXISTS students (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
+        registration_number VARCHAR(100) UNIQUE,
         class_category VARCHAR(50) NOT NULL CHECK (class_category IN ('Little Lions', 'Juniors', 'Youths', 'Adults')),
+        monthly_lessons INTEGER DEFAULT 8,
         active BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
     console.log('Students table created or already exists');
+
+    // Add new columns if they don't exist (for existing databases)
+    await client.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                       WHERE table_name='students' AND column_name='registration_number') THEN
+          ALTER TABLE students ADD COLUMN registration_number VARCHAR(100) UNIQUE;
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                       WHERE table_name='students' AND column_name='monthly_lessons') THEN
+          ALTER TABLE students ADD COLUMN monthly_lessons INTEGER DEFAULT 8;
+        END IF;
+      END $$;
+    `);
+    console.log('Ensured registration_number and monthly_lessons columns exist');
 
     // Create index on name for faster searching
     await client.query(`
@@ -29,6 +48,11 @@ const initializeDatabase = async () => {
     // Create index on active status
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_students_active ON students(active);
+    `);
+
+    // Create index on registration_number
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_students_registration_number ON students(registration_number);
     `);
 
     // Create attendance table
@@ -88,12 +112,12 @@ const initializeDatabase = async () => {
 
     // Add some sample students for testing
     const sampleStudents = [
-      { name: 'John Smith', category: 'Adults' },
-      { name: 'Sarah Johnson', category: 'Youths' },
-      { name: 'Michael Chen', category: 'Juniors' },
-      { name: 'Emma Williams', category: 'Little Lions' },
-      { name: 'David Brown', category: 'Adults' },
-      { name: 'Olivia Davis', category: 'Juniors' },
+      { name: 'John Smith', category: 'Adults', regNum: 'REG001', lessons: 8 },
+      { name: 'Sarah Johnson', category: 'Youths', regNum: 'REG002', lessons: 12 },
+      { name: 'Michael Chen', category: 'Juniors', regNum: 'REG003', lessons: 8 },
+      { name: 'Emma Williams', category: 'Little Lions', regNum: 'REG004', lessons: 4 },
+      { name: 'David Brown', category: 'Adults', regNum: 'REG005', lessons: 8 },
+      { name: 'Olivia Davis', category: 'Juniors', regNum: 'REG006', lessons: 12 },
     ];
 
     for (const student of sampleStudents) {
@@ -104,8 +128,8 @@ const initializeDatabase = async () => {
 
       if (existing.rows.length === 0) {
         await client.query(
-          'INSERT INTO students (name, class_category) VALUES ($1, $2)',
-          [student.name, student.category]
+          'INSERT INTO students (name, class_category, registration_number, monthly_lessons) VALUES ($1, $2, $3, $4)',
+          [student.name, student.category, student.regNum, student.lessons]
         );
       }
     }

@@ -54,6 +54,9 @@ export const getAttendanceReport = (params) =>
 export const getAttendanceStats = (params) =>
   api.get('/attendance/stats', { params });
 
+export const getOverAttendanceReport = (params) =>
+  api.get('/attendance/report/over-attendance', { params });
+
 export const deleteAttendance = (id) =>
   api.delete(`/attendance/${id}`);
 
