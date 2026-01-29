@@ -11,6 +11,7 @@ import {
   getOverAttendanceReport,
   deleteAttendance,
   getAgeTransitionsReport,
+  changePassword,
 } from '../api';
 import './AdminDashboard.css';
 
@@ -36,6 +37,12 @@ function AdminDashboard() {
   const [reportMonth, setReportMonth] = useState('');
   const [reportYear, setReportYear] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordFormData, setPasswordFormData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -198,6 +205,50 @@ function AdminDashboard() {
       } finally {
         setLoading(false);
       }
+    }
+  };
+
+  const handleOpenPasswordModal = () => {
+    setPasswordFormData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    });
+    setShowPasswordModal(true);
+  };
+
+  const handleClosePasswordModal = () => {
+    setShowPasswordModal(false);
+    setPasswordFormData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    });
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+
+    if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
+      alert('New password and confirm password do not match');
+      return;
+    }
+
+    if (passwordFormData.newPassword.length < 6) {
+      alert('New password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await changePassword(passwordFormData.currentPassword, passwordFormData.newPassword);
+      alert('Password changed successfully');
+      handleClosePasswordModal();
+    } catch (error) {
+      console.error('Error changing password:', error);
+      alert(error.response?.data?.error || 'Error changing password. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -535,6 +586,9 @@ function AdminDashboard() {
           <button className="btn-back" onClick={() => navigate('/')}>
             ← Student Sign-In
           </button>
+          <button className="btn-secondary" onClick={handleOpenPasswordModal}>
+            Change Password
+          </button>
           <button className="btn-logout" onClick={handleLogout}>
             Logout
           </button>
@@ -647,6 +701,57 @@ function AdminDashboard() {
                 </button>
                 <button type="submit" className="btn-primary" disabled={loading}>
                   {loading ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showPasswordModal && (
+        <div className="modal-overlay" onClick={handleClosePasswordModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Change Password</h2>
+            <form onSubmit={handlePasswordSubmit}>
+              <div className="form-group">
+                <label>Current Password *</label>
+                <input
+                  type="password"
+                  value={passwordFormData.currentPassword}
+                  onChange={(e) => setPasswordFormData({ ...passwordFormData, currentPassword: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>New Password *</label>
+                <input
+                  type="password"
+                  value={passwordFormData.newPassword}
+                  onChange={(e) => setPasswordFormData({ ...passwordFormData, newPassword: e.target.value })}
+                  required
+                  minLength="6"
+                />
+                <small>Must be at least 6 characters</small>
+              </div>
+
+              <div className="form-group">
+                <label>Confirm New Password *</label>
+                <input
+                  type="password"
+                  value={passwordFormData.confirmPassword}
+                  onChange={(e) => setPasswordFormData({ ...passwordFormData, confirmPassword: e.target.value })}
+                  required
+                  minLength="6"
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={handleClosePasswordModal}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" disabled={loading}>
+                  {loading ? 'Changing...' : 'Change Password'}
                 </button>
               </div>
             </form>

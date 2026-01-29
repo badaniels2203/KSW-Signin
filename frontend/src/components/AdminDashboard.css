@@ -4,7 +4,7 @@
 }
 
 .dashboard-header {
-  background: white;
+  background: orange;
   padding: 20px 40px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -396,6 +396,7 @@
 .modal-content .form-group input[type="text"],
 .modal-content .form-group input[type="date"],
 .modal-content .form-group input[type="number"],
+.modal-content .form-group input[type="password"],
 .modal-content .form-group select {
   width: 100%;
   padding: 12px;
@@ -408,6 +409,7 @@
 .modal-content .form-group input[type="text"]:focus,
 .modal-content .form-group input[type="date"]:focus,
 .modal-content .form-group input[type="number"]:focus,
+.modal-content .form-group input[type="password"]:focus,
 .modal-content .form-group select:focus {
   outline: none;
   border-color: #667eea;
