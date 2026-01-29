@@ -4,7 +4,7 @@
 }
 
 .dashboard-header {
-  background: orange;
+  background: linear-gradient(135deg, #ff8c00 0%, #ff6b00 100%);
   padding: 20px 40px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
