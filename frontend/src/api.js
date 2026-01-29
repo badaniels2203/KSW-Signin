@@ -19,8 +19,8 @@ api.interceptors.request.use((config) => {
 export const login = (username, password) =>
   api.post('/auth/login', { username, password });
 
-export const changePassword = (username, currentPassword, newPassword) =>
-  api.post('/auth/change-password', { username, currentPassword, newPassword });
+export const changePassword = (currentPassword, newPassword) =>
+  api.post('/auth/change-password', { currentPassword, newPassword });
 
 // Students
 export const searchStudents = (query) =>

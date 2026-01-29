@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -48,21 +49,25 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.post('/change-password', async (req, res) => {
+router.post('/change-password', authenticateToken, async (req, res) => {
   try {
-    const { username, currentPassword, newPassword } = req.body;
+    const { currentPassword, newPassword } = req.body;
 
-    if (!username || !currentPassword || !newPassword) {
-      return res.status(400).json({ error: 'All fields required' });
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current password and new password required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters' });
     }
 
     const result = await pool.query(
-      'SELECT * FROM admin_users WHERE username = $1',
-      [username]
+      'SELECT * FROM admin_users WHERE id = $1',
+      [req.user.id]
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(404).json({ error: 'User not found' });
     }
 
     const user = result.rows[0];
