@@ -44,9 +44,9 @@ services:
     build: ./frontend
     container_name: ksw-frontend
     ports:
-      # Using port 8080 to avoid conflicts with Apache, native nginx, or other services on port 80
-      # Change to "80:80" if port 80 is available on your system
-      - "8080:80"
+      # Expose on localhost only for reverse proxy access
+      # Your main nginx will proxy to localhost:8081
+      - "127.0.0.1:8081:80"
     depends_on:
       - backend
     restart: unless-stopped
